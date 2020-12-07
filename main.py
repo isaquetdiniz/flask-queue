@@ -5,18 +5,21 @@ from worker import conn
 
 import time
 import logging
+'''
 import sys
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
+'''
 sched = BackgroundScheduler()
 
 q = Queue(connection=conn)
 
 def teste(word):
+    time.sleep(10)
     print(word)
     
-def testeagain(word):
-    q.enqueue(teste, word)
+def testeagain(words):
+    for word in words:
+        q.enqueue(teste, word)
 
 sched.start()
 
@@ -37,7 +40,8 @@ def link_products():
             "message": "Post Method"
         }
     else:
-        sched.add_job(testeagain, trigger=None, args='hello world')
+        data = request.get_json()
+        sched.add_job(testeagain, trigger=None, args=[data['links_products']])
         return {
             "message": "Get Method!"
         }   

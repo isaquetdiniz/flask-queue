@@ -2,24 +2,22 @@ from flask import Flask, request
 from apscheduler.schedulers.background import BackgroundScheduler
 from rq import Queue
 from worker import conn
-
-import time
-import logging
-'''
 import sys
+import logging
+
+from scrapins import magazine_luiza
+
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-'''
 sched = BackgroundScheduler()
 
 q = Queue(connection=conn)
 
-def teste(word):
-    time.sleep(10)
-    print(word)
+def scraping(link):
+    print(magazine_luiza.parse(link, 'margazine_luiza'))
     
-def testeagain(words):
-    for word in words:
-        q.enqueue(teste, word)
+def run_scraping(links):
+    for link in links:
+        q.enqueue(scraping, link)
 
 sched.start()
 
@@ -41,7 +39,7 @@ def link_products():
         }
     else:
         data = request.get_json()
-        sched.add_job(testeagain, trigger=None, args=[data['links_products']])
+        sched.add_job(run_scraping, trigger=None, args=[data['links_products']])
         return {
             "message": "Get Method!"
         }   

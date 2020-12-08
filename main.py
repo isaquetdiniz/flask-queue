@@ -18,9 +18,9 @@ sched.start()
 def scraping(link):
   data = magazine_luiza.parse(link, 'magazine_luiza')
 
-  headers = { 'Authorization': 'Bearer 6eae59768c7babe29099b727dc289397c16a983553f9270218abd5ef9ff0fd72' }
+  headers = { 'Authorization': 'Bearer ' }
   requests.post(
-    'https://price-analysis-api-staging.herokuapp.com/api/v2/scraping_return',
+    '',
     params={ "data": json.dumps(data), "link": link },
     headers=headers
   )

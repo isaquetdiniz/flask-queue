@@ -1,45 +1,40 @@
-from flask import Flask, request
-from apscheduler.schedulers.background import BackgroundScheduler
-from rq import Queue
-from worker import conn
 import sys
 import logging
+import json
+import requests
 
-from scrapins import magazine_luiza
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-sched = BackgroundScheduler()
-
-q = Queue(connection=conn)
-
-def scraping(link):
-    print(magazine_luiza.parse(link, 'margazine_luiza'))
-    
-def run_scraping(links):
-    for link in links:
-        q.enqueue(scraping, link)
-
-sched.start()
+from flask import Flask, request, make_response, render_template
+from rq import Queue
+from worker import conn
+from scrapings import magazine_luiza
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
+q = Queue(connection=conn)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+sched = BackgroundScheduler()
+sched.start()
 
-@app.route('/')
-def hello_message():
-    return {
-        "App": "microservice-python",
-        "Status": "develop",
-        "Author": "Isaque Diniz"
-    }
+def scraping(link):
+  data = magazine_luiza.parse(link, 'magazine_luiza')
 
-@app.route('/methods', methods=['GET', 'POST'])
+  headers = { 'Authorization': 'Bearer 6eae59768c7babe29099b727dc289397c16a983553f9270218abd5ef9ff0fd72' }
+  requests.post(
+    'https://price-analysis-api-staging.herokuapp.com/api/v2/scraping_return',
+    params={ "data": json.dumps(data), "link": link },
+    headers=headers
+  )
+
+def run_queue_scraping(links):
+  for link in links:
+    q.enqueue(scraping, link)
+
+@app.route('/register', methods=['POST'])
 def link_products():
-    if request.method == 'POST':
-        return  {
-            "message": "Post Method"
-        }
-    else:
-        data = request.get_json()
-        sched.add_job(run_scraping, trigger=None, args=[data['links_products']])
-        return {
-            "message": "Get Method!"
-        }   
+  try:
+    data = request.get_json()
+
+    sched.add_job(run_queue_scraping, args=[data['links_products']])
+    return "Done"
+  except Exception as err:
+    print(f"Error: {err}")

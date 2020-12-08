@@ -165,7 +165,7 @@ def parse(url, marketplace):
       "marketplace": marketplace,
     }
 
-    return json.dumps(result, indent = 2)
+    return result
 
   except requests.exceptions.HTTPError as err:
     raise SystemExit(err)
